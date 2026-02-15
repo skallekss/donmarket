@@ -1,0 +1,22 @@
+name: DonMarket
+version: ${project.version}
+main: ru.fkdev.donmarket.DonMarketPlugin
+api-version: 1.16
+description: DonMarket - marketplace for donation items
+author: fkdev
+softdepend:
+  - Vault
+  - PlayerPoints
+commands:
+  dm:
+    description: Open DonMarket menu
+    usage: /dm
+    permission: donmarket.use
+    permission-message: "You don't have permission to use this command."
+permissions:
+  donmarket.use:
+    description: Allows access to DonMarket
+    default: true
+  donmarket.admin:
+    description: Admin permissions for DonMarket
+    default: op

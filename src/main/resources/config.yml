@@ -1,0 +1,869 @@
+# ============================================================
+#                    DonMarket — Конфигурация
+# ============================================================
+# Все цвета поддерживают формат &#RRGGBB (HEX) и стандартные &c, &a и т.д.
+# Плейсхолдеры (подставляются автоматически):
+#   {player}       — ник игрока
+#   {amount}       — сумма монет
+#   {min_price}    — минимальная цена
+#   {product}      — название товара
+#   {duration}     — длительность (для привилегий)
+#   {order_id}     — ID заказа
+#   {token_price}  — цена в поинтах (PlayerPoints)
+#   {dealer}       — ник продавца
+#   {rate}         — курс (монеты за 1 поинт)
+#   {expires}      — время до истечения
+#   {balance}      — баланс поинтов игрока
+#   {page}         — текущая страница
+#   {status}       — статус заказа
+# ============================================================
+
+# ========================
+# Основные настройки
+# ========================
+settings:
+  # Время жизни заказа в часах (после этого он автоматически истекает)
+  order-expire-hours: 24
+
+  # Таймаут ввода суммы в чат (в секундах)
+  chat-input-timeout-seconds: 60
+
+  # Курс конвертации: сколько монет стоит 1 поинт (PlayerPoints)
+  # Используется при автоматическом расчёте цены в поинтах при создании заказа
+  # Формула: token_price = ceil(coins_offer / coins-per-point)
+  coins-per-point: 10
+
+  # Слово для отмены ввода суммы (можно несколько через запятую)
+  cancel-words: "cancel,отмена"
+
+# ========================
+# Звуки
+# ========================
+sounds:
+  # Звук при ошибке (недостаточно средств, свой заказ и т.д.)
+  error: "ENTITY_VILLAGER_NO"
+  error-volume: 1.0
+  error-pitch: 1.0
+
+  # Звук при недоступном товаре
+  unavailable: "BLOCK_NOTE_BLOCK_BASS"
+  unavailable-volume: 1.0
+  unavailable-pitch: 0.5
+
+  # Звук при успешной покупке/принятии заказа
+  success: "ENTITY_PLAYER_LEVELUP"
+  success-volume: 1.0
+  success-pitch: 1.0
+
+  # Звук при отмене заказа
+  cancel: "BLOCK_ANVIL_LAND"
+  cancel-volume: 0.5
+  cancel-pitch: 1.0
+
+# ========================
+# Сообщения в чат
+# ========================
+messages:
+  # Нет прав на команду /dm
+  no-permission: "&#FF0000[●] &#FFFFE6У вас нет прав для использования этой команды."
+
+  # --- Покупка заказа ---
+  # Нельзя купить свой заказ
+  buy-own-order: "&#FF0000[●] &#FFFFE6Вы не можете купить свой собственный заказ!"
+
+  # Недостаточно поинтов для покупки
+  not-enough-points: "&#FF0000[●] &#FFFFE6Недостаточно поинтов! Нужно: &#FF6600{token_price}⚡&#FFFFE6, у вас: &#FF6600{balance}⚡"
+
+  # Успешная покупка заказа
+  buy-success: "&#00FF00[●] &#FFFFE6Заказ успешно принят! Вы получили &#FFFF00${amount} монет&#FFFFE6."
+
+  # --- Создание заказа (чат-ввод) ---
+  # Сообщение при выборе товара (3 строки отправляются игроку)
+  chat-prompt-line1: "&#FF6600[●] &#FFFFE6Услуга: &#FF6600{product}"
+  chat-prompt-line2: "&#FFFFE6Минимальная сумма: &#FFFF00${min_price}"
+  chat-prompt-line3: "&#FFFFE6Отправьте в чат &#FF6600Сумму&#FFFFE6 предложения."
+
+  # Время ввода истекло
+  chat-timeout: "&#FF0000[●] &#FFFFE6Время ввода суммы истекло. Заказ отменён."
+
+  # Игрок написал cancel / отмена
+  chat-cancelled: "&#FF6600[●] &#FFFFE6Создание заказа отменено."
+
+  # Введено не число
+  chat-invalid-number: "&#FF0000[●] &#FFFFE6Введите корректное число. Для отмены напишите &#FF6600cancel&#FFFFE6."
+
+  # Сумма меньше минимальной
+  chat-below-min: "&#FF0000[●] &#FFFFE6Сумма меньше минимальной! Минимум: &#FFFF00${min_price}"
+
+  # Заказ успешно создан (3 строки)
+  order-created-line1: "&#00FF00[●] &#FFFFE6Заказ &#FF6600#{order_id} &#FFFFE6успешно создан!"
+  order-created-line2: "&#FFFFE6Товар: &#FF6600{product}"
+  order-created-line3: "&#FFFFE6Сумма: &#FFFF00${amount} &#FFFFE6| Цена: &#FF6600{token_price}⚡"
+
+  # --- Мои предложения ---
+  # Заказ отменён
+  order-cancelled: "&#FF6600[●] &#FFFFE6Заказ &#FF6600#{order_id} &#FFFFE6отменён."
+
+  # Информация о заказе (ЛКМ по своему заказу)
+  order-info-header: "&#FF6600[●] &#FFFFE6Заказ &#FF6600#{order_id}"
+  order-info-product: "&#FFFFE6Товар: &#FF6600{product}"
+  order-info-amount: "&#FFFFE6Сумма: &#FFFF00${amount}"
+  order-info-price: "&#FFFFE6Цена: &#FF6600{token_price}⚡"
+  order-info-expires: "&#FFFFE6Истекает: &#FF6600{expires}"
+
+# ========================
+# Команды выдачи наград
+# ========================
+# При принятии заказа (покупке) выполняются консольные команды.
+#
+# Команды разделены по типу товара (productType):
+#   PRIVILEGE — привилегии
+#   CASE      — кейсы
+#   TOKEN     — токены (PlayerPoints)
+#   OTHER     — разное (разбан, размут, пропуск и т.д.)
+#
+# Плейсхолдеры (подставляются автоматически):
+#   {player}   — ник покупателя (кто принял заказ)
+#   {owner}    — ник создателя заказа (кому выдаётся товар)
+#   {product}  — ключ товара (например: "Diamond", "Кейс Редкий", "100 Токенов")
+#   {duration} — длительность на русском (например: "30 дней", "навсегда"). Пусто если нет.
+#   {duration_code} — код длительности для команд (например: "30d", "90d", "permanent").
+#                     Настраивается в privileges-menu.duration-codes
+#   {order_id} — ID заказа
+#   {amount}   — сумма монет предложения
+#   {token_price} — цена в поинтах
+#
+# Можно указать несколько команд списком.
+# Если список пуст — ничего не выполняется для этого типа.
+# Секция "default" выполняется ВСЕГДА (для любого типа), в дополнение к типовой.
+#
+# Пример: игрок создал заказ на привилегию "Diamond" на "30 дней".
+# Другой игрок принял заказ. Выполнятся команды из PRIVILEGE + default.
+rewards:
+  # Команды для ПРИВИЛЕГИЙ
+  # {product} = название привилегии (Iron, Gold, Diamond, ...)
+  # {duration} = длительность на русском (30 дней, 90 дней, навсегда)
+  # {duration_code} = код для команд (30d, 90d, permanent)
+  #   Коды настраиваются в privileges-menu.duration-codes
+  #
+  # Пример для LuckPerms:
+  #   Временная: "lp user {owner} parent addtemp {product} {duration_code}"
+  #     → "lp user Steve parent addtemp Diamond 30d"
+  #   Навсегда (если duration_code = "permanent"):
+  #     "lp user {owner} parent add {product}"
+  #   Для разных длительностей можно использовать один шаблон с {duration_code}:
+  PRIVILEGE:
+    - "say [DonMarket] Привилегия {product} [{duration}] выдана игроку {owner}"
+    # - "lp user {owner} parent addtemp {product} {duration_code}"
+
+  # Команды для КЕЙСОВ
+  # {product} = название кейса (Кейс Стандарт, Кейс Редкий, ...)
+  # {duration} = пусто (у кейсов нет длительности)
+  #
+  # Пример для DonateCase:
+  #   "dc give {owner} {product} 1"
+  CASE:
+    - "say [DonMarket] Кейс {product} выдан игроку {owner}"
+    # - "dc give {owner} {product} 1"
+
+  # Команды для ТОКЕНОВ (PlayerPoints)
+  # {product} = название пакета (10 Токенов, 25 Токенов, ...)
+  # {duration} = количество токенов в пакете (10, 25, 50, ...)
+  #
+  # Пример для PlayerPoints:
+  #   "points give {owner} {duration}"
+  TOKEN:
+    - "say [DonMarket] Токены ({duration} шт.) выданы игроку {owner}"
+    # - "points give {owner} {duration}"
+
+  # Команды для РАЗНОГО (разбан, размут, пропуск, префикс и т.д.)
+  # {product} = название услуги (Разбан, Размут, Пропуск, ...)
+  OTHER:
+    - "say [DonMarket] Услуга {product} выполнена для игрока {owner}"
+    # - "unban {owner}"
+    # - "unmute {owner}"
+
+  # Команды которые выполняются ВСЕГДА (для любого типа заказа)
+  # Например: логирование, уведомление в Discord и т.д.
+  default:
+    - "say [DonMarket] Заказ #{order_id} выполнен: {owner} получил {product}"
+
+# ========================
+# Фон GUI (стёкла)
+# ========================
+gui-background:
+  # Красное стекло
+  red:
+    material: RED_STAINED_GLASS_PANE
+    # Название с градиентом. Поддерживает &#RRGGBB
+    name: "&#FF0000F&#FF0900u&#FF1200n&#FF1B00T&#FF2400i&#FF2E00m&#FF3700e&#FF4000.&#FF4A00s&#FF5000u"
+
+  # Оранжевое стекло
+  orange:
+    material: ORANGE_STAINED_GLASS_PANE
+    name: "&#FF0000F&#FF0900u&#FF1200n&#FF1B00T&#FF2400i&#FF2E00m&#FF3700e&#FF4000.&#FF4A00s&#FF5000u"
+
+# ============================================================
+#                    МЕНЮ: Главное (/dm)
+# ============================================================
+main-menu:
+  # Заголовок инвентаря
+  title: "&#FF6600Дон Маркет"
+  # Размер (кратно 9, максимум 54)
+  size: 45
+
+  # Слоты красного фона (индексы с 0)
+  red-slots: [0, 1, 7, 8, 9, 17, 18, 26, 27, 35, 36, 37, 43, 44]
+  # Слоты оранжевого фона
+  orange-slots: [2, 3, 4, 5, 6, 10, 11, 15, 16, 19, 25, 28, 29, 33, 34, 38, 39, 40, 41, 42]
+
+  # --- Кнопка "Заказы игроков" ---
+  orders-button:
+    slot: 21
+    material: GOLD_INGOT
+    name: "&#FFFF00[&#FF6600⚡&#FFFF00] &#FFFFFFЗаказы игроков"
+    lore:
+      - ""
+      - "&#FFFFE6Нажмите, чтобы перейти"
+      - "&#FFFFE6в раздел заказов игроков."
+      - ""
+      - "&#FFFFE6Здесь вы можете просмотреть"
+      - "&#FFFFE6и принять заказы других игроков."
+      - ""
+      - "&#FF6600▶ Нажмите, чтобы открыть"
+
+  # --- Кнопка "Создать заказ" ---
+  create-button:
+    slot: 23
+    material: TOTEM_OF_UNDYING
+    name: "&#FFFF00[&#FF6600⚡&#FFFF00] &#FFFFFFСоздать заказ"
+    lore:
+      - ""
+      - "&#FFFFE6Нажмите, чтобы перейти"
+      - "&#FFFFE6в раздел создания заказа."
+      - ""
+      - "&#FFFFE6Создайте свой заказ на покупку"
+      - "&#FFFFE6донат-услуг за игровую валюту."
+      - ""
+      - "&#FF6600▶ Нажмите, чтобы открыть"
+
+# ============================================================
+#             МЕНЮ: Заказы игроков (PlayerOrdersGui)
+# ============================================================
+orders-menu:
+  title: "&#FF6600Заказы игроков"
+  size: 54
+  # Сколько слотов под товары (0 .. items-per-page-1)
+  items-per-page: 45
+
+  # --- Кнопка "Мои предложения" ---
+  my-offers-button:
+    slot: 46
+    material: ENDER_CHEST
+    name: "&#FFFF00[&#FF6600⚡&#FFFF00] &#FFFFFFМои предложения"
+    lore:
+      - ""
+      - "&#FFFFE6Нажмите, чтобы перейти"
+      - "&#FFFFE6к вашим предложениям."
+      - ""
+      - "&#FF6600▶ Нажмите, чтобы открыть"
+
+  # --- Кнопка "Предыдущая страница" ---
+  prev-page-button:
+    slot: 48
+    material: TIPPED_ARROW
+    name: "&#FFFF00Предыдущая страница"
+    lore:
+      - ""
+      - "&#FFFFE6Текущая страница: &#FF6600{page}"
+      - ""
+      - "&#FF6600▶ ЛКМ — назад"
+
+  # --- Кнопка "Обновить / Сортировка" ---
+  refresh-button:
+    slot: 49
+    material: NETHER_STAR
+    name: "&#FFFF00[&#FF6600⚡&#FFFF00] &#FFFFFFОбновить"
+    lore-header:
+      - ""
+      - "&#FFFFE6Сортировка:"
+    # Строка активного режима сортировки (подсвечивается красным)
+    sort-active: " &#FF0000▶ {mode}"
+    # Строка неактивного режима сортировки (серая)
+    sort-inactive: " &#777777  {mode}"
+    lore-footer:
+      - ""
+      - "&#FF6600▶ ЛКМ — обновить"
+      - "&#FF6600▶ ПКМ — сменить сортировку"
+
+  # --- Кнопка "Следующая страница" ---
+  next-page-button:
+    slot: 50
+    material: SPECTRAL_ARROW
+    name: "&#FFFF00Следующая страница"
+    lore:
+      - ""
+      - "&#FFFFE6Текущая страница: &#FF6600{page}"
+      - ""
+      - "&#FF6600▶ ЛКМ — вперёд"
+
+  # --- Кнопка "Категория" ---
+  category-button:
+    slot: 52
+    material: CHEST
+    name: "&#FFFF00[&#FF6600⚡&#FFFF00] &#FFFFFFКатегория"
+    lore-header:
+      - ""
+      - "&#FFFFE6Категория:"
+    # Строка активной категории
+    cat-active: " &#FF0000▶ {category}"
+    # Строка неактивной категории
+    cat-inactive: " &#777777  {category}"
+    lore-footer:
+      - ""
+      - "&#FF6600▶ ЛКМ — сменить категорию"
+
+  # --- Шаблон карточки заказа (слоты 0..44) ---
+  order-card:
+    # Название карточки. {product} — название товара
+    name: "&#FFFF00❖ &#FFFFFF{product}"
+    lore:
+      - "&#FF6600➥ Нажмите, чтобы купить"
+      - "&#777777§m                              "
+      - "&#FFFFE6● Дилер: &#FF6600{dealer}"
+      - "&#FFFFE6$ Монет: &#FFFF00${amount}"
+      - "&#FFFFE6& Курс: &#FFFF00${rate} за 1⚡"
+      - "&#FFFFE6⟲ Истекает: &#FF6600{expires}"
+      - "&#FFFFE6⚕ Цена: &#FF6600{token_price}⚡"
+      - "&#FFFFE6⚡ Баланс поинтов: &#FF6600{balance}"
+      - "&#777777§m                              "
+    # Материал карточки по категории (если не player_head)
+    materials:
+      PRIVILEGES: TOTEM_OF_UNDYING
+      CASES: ENDER_CHEST
+      TOKENS: EMERALD
+      DEFAULT: GOLD_INGOT
+
+# ============================================================
+#             МЕНЮ: Мои предложения (MyOffersGui)
+# ============================================================
+my-offers-menu:
+  title: "&#FF6600Мои предложения"
+  size: 54
+
+  # Предмет "Пустая страница" (когда нет заказов)
+  empty-item:
+    slot: 22
+    material: DEAD_BUSH
+    name: "&#FF0000Пустая страница"
+    lore:
+      - ""
+      - "&#FFFFE6У вас нет активных предложений."
+      - "&#FFFFE6Создайте заказ через главное меню."
+      - ""
+
+  # Кнопка "Вернуться" (назад к заказам игроков)
+  back-button:
+    slot: 49
+    material: TIPPED_ARROW
+    name: "&#FFFF00Вернуться.."
+    lore:
+      - ""
+      - "&#FFFFE6Нажмите, чтобы вернуться"
+      - "&#FFFFE6к заказам игроков."
+      - ""
+      - "&#FF6600▶ Нажмите, чтобы вернуться"
+
+  # Шаблон карточки своего заказа
+  order-card:
+    name: "&#FFFF00❖ &#FFFFFF{product}"
+    lore:
+      - "&#777777§m                              "
+      - "&#FFFFE6● Статус: &#00FF00{status}"
+      - "&#FFFFE6$ Монет: &#FFFF00${amount}"
+      - "&#FFFFE6⚕ Цена: &#FF6600{token_price}⚡"
+      - "&#FFFFE6⟲ Истекает: &#FF6600{expires}"
+      - "&#777777§m                              "
+      - ""
+      - "&#FF6600▶ ЛКМ — информация"
+      - "&#FF0000▶ ПКМ — отменить заказ"
+
+# ============================================================
+#           МЕНЮ: Создать заказ (CreateOrderMainGui)
+# ============================================================
+create-order-menu:
+  title: "&#FF6600Создать заказ"
+  size: 45
+
+  red-slots: [0, 1, 7, 8, 9, 17, 18, 26, 27, 35, 36, 37, 43, 44]
+  orange-slots: [2, 3, 5, 6, 10, 11, 12, 14, 15, 16, 19, 20, 22, 24, 25, 28, 29, 30, 32, 33, 34, 38, 39, 40, 41, 42]
+
+  # Кнопка "Вернуться" (назад в главное меню)
+  back-button:
+    slot: 4
+    material: TIPPED_ARROW
+    name: "&#FFFF00Вернуться.."
+    lore:
+      - ""
+      - "&#FFFFE6Нажмите, чтобы вернуться"
+      - "&#FFFFE6в главное меню."
+      - ""
+      - "&#FF6600▶ Нажмите, чтобы вернуться"
+
+  # --- Категории ---
+  categories:
+    privileges:
+      slot: 13
+      material: TOTEM_OF_UNDYING
+      name: "&#FFFF00[&#FF6600⚡&#FFFF00] &#FFFFFFПривилегии"
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE6привилегии за игровую валюту."
+        - ""
+        - "&#FFFFE6Минимальная цена: &#FFFF00$100"
+        - ""
+        - "&#FF6600▶ Нажмите, чтобы открыть"
+
+    cases:
+      slot: 21
+      material: ENDER_CHEST
+      name: "&#FFFF00[&#FF6600⚡&#FFFF00] &#FFFFFFКейсы"
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE6кейса за игровую валюту."
+        - ""
+        - "&#FFFFE6Минимальная цена: &#FFFF00$50"
+        - ""
+        - "&#FF6600▶ Нажмите, чтобы открыть"
+
+    tokens:
+      slot: 23
+      material: EMERALD
+      name: "&#FFFF00[&#FF6600⚡&#FFFF00] &#FFFFFFТокены"
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE6токенов за игровую валюту."
+        - ""
+        - "&#FFFFE6Минимальная цена: &#FFFF00$50"
+        - ""
+        - "&#FF6600▶ Нажмите, чтобы открыть"
+
+    other:
+      slot: 31
+      material: NETHER_STAR
+      name: "&#FFFF00[&#FF6600⚡&#FFFF00] &#FFFFFFРазное"
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE6разных услуг за игровую валюту."
+        - ""
+        - "&#FFFFE6Минимальная цена: &#FFFF00$50"
+        - ""
+        - "&#FF6600▶ Нажмите, чтобы открыть"
+
+# ============================================================
+#           МЕНЮ: Привилегии (CreateOrderPrivilegesGui)
+# ============================================================
+privileges-menu:
+  title: "&#FF6600Привилегии"
+  size: 45
+
+  red-slots: [0, 1, 7, 8, 9, 17, 18, 26, 27, 35, 36, 37, 43, 44]
+  orange-slots: [2, 3, 5, 6, 10, 16, 19, 22, 25, 28, 29, 30, 32, 33, 34, 38, 39, 40, 41, 42]
+
+  # Кнопка "Вернуться"
+  back-button:
+    slot: 4
+    material: TIPPED_ARROW
+    name: "&#FFFF00Вернуться.."
+    lore:
+      - ""
+      - "&#FFFFE6Нажмите, чтобы вернуться"
+      - "&#FFFFE6в меню создания заказа."
+      - ""
+      - "&#FF6600▶ Нажмите, чтобы вернуться"
+
+  # Названия длительностей (по порядку: 30 дней, 90 дней, навсегда)
+  duration-labels:
+    - "30 дней"
+    - "90 дней"
+    - "навсегда"
+
+  # Коды длительностей для команд наград (соответствуют duration-labels по порядку)
+  # Используются как плейсхолдер {duration_code} в rewards
+  # Например: "30 дней" → "30d", "90 дней" → "90d", "навсегда" → "permanent"
+  duration-codes:
+    - "30d"
+    - "90d"
+    - "permanent"
+
+  # Строка активной длительности в лоре (подсвечивается красным)
+  duration-active: " &#FF0000▶ {label} (Мин. сумма: ${price})"
+  # Строка неактивной длительности (серая)
+  duration-inactive: " &#777777  {label} (Мин. сумма: ${price})"
+
+  # Подвал лора привилегии
+  privilege-lore-footer:
+    - ""
+    - "&#FF6600[ПКМ] &#FFFFE6Сменить длительность"
+    - "&#FF6600[ЛКМ] &#FFFFE6Создать заказ"
+    - ""
+    - "&#FFFFE6Минимальная цена: &#FFFF00${min_price}"
+
+  # Список привилегий
+  # slot — слот в инвентаре
+  # name — название привилегии
+  # material — материал предмета
+  # color — цвет кожаной брони (R,G,B) — только для LEATHER_*
+  # min-prices — минимальные цены [30 дней, 90 дней, навсегда]
+  items:
+    - slot: 11
+      name: "Iron"
+      material: LEATHER_CHESTPLATE
+      color: [200, 200, 200]
+      min-prices: [100, 250, 500]
+
+    - slot: 12
+      name: "Gold"
+      material: LEATHER_CHESTPLATE
+      color: [255, 200, 0]
+      min-prices: [150, 350, 700]
+
+    - slot: 13
+      name: "Diamond"
+      material: LEATHER_CHESTPLATE
+      color: [0, 200, 255]
+      min-prices: [200, 500, 1000]
+
+    - slot: 14
+      name: "Emerald"
+      material: LEATHER_CHESTPLATE
+      color: [0, 200, 50]
+      min-prices: [300, 700, 1400]
+
+    - slot: 15
+      name: "Netherite"
+      material: LEATHER_CHESTPLATE
+      color: [80, 70, 70]
+      min-prices: [400, 900, 1800]
+
+    - slot: 20
+      name: "Premium"
+      material: LEATHER_CHESTPLATE
+      color: [255, 100, 0]
+      min-prices: [500, 1200, 2500]
+
+    - slot: 21
+      name: "Ultra"
+      material: LEATHER_CHESTPLATE
+      color: [255, 50, 50]
+      min-prices: [700, 1600, 3200]
+
+    - slot: 23
+      name: "Legend"
+      material: LEATHER_CHESTPLATE
+      color: [180, 0, 255]
+      min-prices: [900, 2000, 4000]
+
+    - slot: 24
+      name: "Immortal"
+      material: LEATHER_CHESTPLATE
+      color: [255, 0, 100]
+      min-prices: [1200, 2800, 5500]
+
+    - slot: 25
+      name: "Galaxy"
+      material: LEATHER_CHESTPLATE
+      color: [100, 0, 255]
+      min-prices: [1500, 3500, 7000]
+
+    - slot: 31
+      name: "Titan"
+      material: LEATHER_CHESTPLATE
+      color: [255, 0, 0]
+      min-prices: [2000, 4500, 9000]
+
+# ============================================================
+#              МЕНЮ: Кейсы (CreateOrderCasesGui)
+# ============================================================
+cases-menu:
+  title: "&#FF6600Кейсы"
+  size: 45
+
+  red-slots: [0, 1, 7, 8, 9, 17, 18, 26, 27, 35, 36, 37, 43, 44]
+  orange-slots: [2, 3, 5, 6, 10, 16, 19, 25, 28, 29, 30, 32, 33, 34, 38, 39, 40, 41, 42]
+
+  back-button:
+    slot: 4
+    material: TIPPED_ARROW
+    name: "&#FFFF00Вернуться.."
+    lore:
+      - ""
+      - "&#FFFFE6Нажмите, чтобы вернуться"
+      - "&#FFFFE6в меню создания заказа."
+      - ""
+      - "&#FF6600▶ Нажмите, чтобы вернуться"
+
+  # Лор доступного кейса
+  available-lore:
+    - ""
+    - "&#FFFFE6Создайте заказ на покупку"
+    - "&#FFFFE6данного кейса."
+    - ""
+    - "&#FFFFE6Минимальная цена: &#FFFF00${min_price}"
+    - ""
+    - "&#FF6600▶ ЛКМ — создать заказ"
+
+  # Лор недоступного кейса
+  unavailable-lore:
+    - ""
+    - "&#FF0000Недоступно!"
+    - "&#FFFFE6Минимальная цена: &#FFFF00${min_price}"
+    - ""
+
+  # Список кейсов
+  # texture — base64 текстура для player_head (если material = PLAYER_HEAD)
+  # available — доступен ли для заказа
+  items:
+    - slot: 11
+      name: "Кейс Стандарт"
+      material: PLAYER_HEAD
+      texture: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGNiMzZhMTRkNjRhNGEwMDlhMDg4OTU2MmVjMGVhNjUyMWI1NjFhNGJkMTM2OGI2MjBhNTRlNjUxMjc0MiJ9fX0="
+      min-price: 50
+      available: true
+
+    - slot: 12
+      name: "Кейс Редкий"
+      material: PLAYER_HEAD
+      texture: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGNiMzZhMTRkNjRhNGEwMDlhMDg4OTU2MmVjMGVhNjUyMWI1NjFhNGJkMTM2OGI2MjBhNTRlNjUxMjc0MiJ9fX0="
+      min-price: 100
+      available: true
+
+    - slot: 13
+      name: "Кейс Эпический"
+      material: PLAYER_HEAD
+      texture: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGNiMzZhMTRkNjRhNGEwMDlhMDg4OTU2MmVjMGVhNjUyMWI1NjFhNGJkMTM2OGI2MjBhNTRlNjUxMjc0MiJ9fX0="
+      min-price: 200
+      available: true
+
+    - slot: 14
+      name: "Кейс Легендарный"
+      material: PLAYER_HEAD
+      texture: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGNiMzZhMTRkNjRhNGEwMDlhMDg4OTU2MmVjMGVhNjUyMWI1NjFhNGJkMTM2OGI2MjBhNTRlNjUxMjc0MiJ9fX0="
+      min-price: 350
+      available: true
+
+    - slot: 15
+      name: "Кейс Мифический"
+      material: PLAYER_HEAD
+      texture: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGNiMzZhMTRkNjRhNGEwMDlhMDg4OTU2MmVjMGVhNjUyMWI1NjFhNGJkMTM2OGI2MjBhNTRlNjUxMjc0MiJ9fX0="
+      min-price: 500
+      available: false
+
+# ============================================================
+#             МЕНЮ: Токены (CreateOrderTokensGui)
+# ============================================================
+tokens-menu:
+  title: "&#FF6600Токены"
+  size: 45
+
+  red-slots: [0, 1, 7, 8, 9, 17, 18, 26, 27, 35, 36, 37, 43, 44]
+  orange-slots: [2, 3, 5, 6, 10, 16, 19, 25, 28, 29, 30, 32, 33, 34, 38, 39, 40, 41, 42]
+
+  back-button:
+    slot: 4
+    material: TIPPED_ARROW
+    name: "&#FFFF00Вернуться.."
+    lore:
+      - ""
+      - "&#FFFFE6Нажмите, чтобы вернуться"
+      - "&#FFFFE6в меню создания заказа."
+      - ""
+      - "&#FF6600▶ Нажмите, чтобы вернуться"
+
+  # Список токенов
+  # token-amount — количество токенов (PlayerPoints) в пакете
+  items:
+    - slot: 11
+      name: "10 Токенов"
+      material: EMERALD
+      token-amount: 10
+      min-price: 50
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE610 токенов."
+        - ""
+        - "&#FFFFE6Количество: &#FF660010⚡"
+        - "&#FFFFE6Минимальная цена: &#FFFF00$50"
+        - ""
+        - "&#FF6600▶ ЛКМ — создать заказ"
+
+    - slot: 12
+      name: "25 Токенов"
+      material: EMERALD
+      token-amount: 25
+      min-price: 100
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE625 токенов."
+        - ""
+        - "&#FFFFE6Количество: &#FF660025⚡"
+        - "&#FFFFE6Минимальная цена: &#FFFF00$100"
+        - ""
+        - "&#FF6600▶ ЛКМ — создать заказ"
+
+    - slot: 13
+      name: "50 Токенов"
+      material: EMERALD
+      token-amount: 50
+      min-price: 200
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE650 токенов."
+        - ""
+        - "&#FFFFE6Количество: &#FF660050⚡"
+        - "&#FFFFE6Минимальная цена: &#FFFF00$200"
+        - ""
+        - "&#FF6600▶ ЛКМ — создать заказ"
+
+    - slot: 14
+      name: "100 Токенов"
+      material: EMERALD
+      token-amount: 100
+      min-price: 350
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE6100 токенов."
+        - ""
+        - "&#FFFFE6Количество: &#FF6600100⚡"
+        - "&#FFFFE6Минимальная цена: &#FFFF00$350"
+        - ""
+        - "&#FF6600▶ ЛКМ — создать заказ"
+
+    - slot: 15
+      name: "250 Токенов"
+      material: EMERALD_BLOCK
+      token-amount: 250
+      min-price: 800
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE6250 токенов."
+        - ""
+        - "&#FFFFE6Количество: &#FF6600250⚡"
+        - "&#FFFFE6Минимальная цена: &#FFFF00$800"
+        - ""
+        - "&#FF6600▶ ЛКМ — создать заказ"
+
+    - slot: 21
+      name: "500 Токенов"
+      material: EMERALD_BLOCK
+      token-amount: 500
+      min-price: 1500
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE6500 токенов."
+        - ""
+        - "&#FFFFE6Количество: &#FF6600500⚡"
+        - "&#FFFFE6Минимальная цена: &#FFFF00$1500"
+        - ""
+        - "&#FF6600▶ ЛКМ — создать заказ"
+
+    - slot: 23
+      name: "1000 Токенов"
+      material: EMERALD_BLOCK
+      token-amount: 1000
+      min-price: 2800
+      lore:
+        - ""
+        - "&#FFFFE6Создайте заказ на покупку"
+        - "&#FFFFE61000 токенов."
+        - ""
+        - "&#FFFFE6Количество: &#FF66001000⚡"
+        - "&#FFFFE6Минимальная цена: &#FFFF00$2800"
+        - ""
+        - "&#FF6600▶ ЛКМ — создать заказ"
+
+# ============================================================
+#              МЕНЮ: Разное (CreateOrderOtherGui)
+# ============================================================
+other-menu:
+  title: "&#FF6600Разное"
+  size: 45
+
+  red-slots: [0, 1, 7, 8, 9, 17, 18, 26, 27, 35, 36, 37, 43, 44]
+  orange-slots: [2, 3, 5, 6, 10, 16, 19, 25, 28, 29, 30, 32, 33, 34, 38, 39, 40, 41, 42]
+
+  back-button:
+    slot: 4
+    material: TIPPED_ARROW
+    name: "&#FFFF00Вернуться.."
+    lore:
+      - ""
+      - "&#FFFFE6Нажмите, чтобы вернуться"
+      - "&#FFFFE6в меню создания заказа."
+      - ""
+      - "&#FF6600▶ Нажмите, чтобы вернуться"
+
+  # Лор доступного товара
+  available-lore:
+    - ""
+    - "&#FFFFE6Создайте заказ на покупку"
+    - "&#FFFFE6данной услуги."
+    - ""
+    - "&#FFFFE6Минимальная цена: &#FFFF00${min_price}"
+    - ""
+    - "&#FF6600▶ ЛКМ — создать заказ"
+
+  # Лор недоступного товара
+  unavailable-lore:
+    - ""
+    - "&#FF0000Недоступно!"
+    - "&#FFFFE6Минимальная цена: &#FFFF00${min_price}"
+    - ""
+
+  # Список товаров
+  # category — категория для фильтрации в заказах (UNBAN_UNMUTE, PASS, ALL)
+  items:
+    - slot: 11
+      name: "Разбан"
+      material: BARRIER
+      min-price: 200
+      available: true
+      category: "UNBAN_UNMUTE"
+
+    - slot: 12
+      name: "Размут"
+      material: BARRIER
+      min-price: 100
+      available: true
+      category: "UNBAN_UNMUTE"
+
+    - slot: 13
+      name: "Пропуск"
+      material: NAME_TAG
+      min-price: 300
+      available: true
+      category: "PASS"
+
+    - slot: 14
+      name: "Префикс"
+      material: OAK_SIGN
+      min-price: 150
+      available: true
+      category: "ALL"
+
+    - slot: 15
+      name: "Разные услуги"
+      material: NETHER_STAR
+      min-price: 50
+      available: true
+      category: "ALL"
